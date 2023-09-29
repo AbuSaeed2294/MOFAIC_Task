@@ -123,6 +123,7 @@ const StudentModal = (props) => {
                 disabled={canOnlyView}
                 name="firstName"
                 placeholder="First Name"
+                required
                 onChange={handleInputChange}
               />
             </Col>
@@ -139,6 +140,7 @@ const StudentModal = (props) => {
                 disabled={canOnlyView}
                 name="lastName"
                 placeholder="Last Name"
+                required
                 onChange={handleInputChange}
               />
             </Col>
@@ -153,6 +155,7 @@ const StudentModal = (props) => {
                 name="nationality"
                 disabled={canOnlyView}
                 onChange={handleInputChange}
+                required
                 aria-label="Select Your Nationality"
               >
                 <option>Select Your Nationality</option>
@@ -181,6 +184,7 @@ const StudentModal = (props) => {
                 value={props?.singleStudentData?.dateOfBirth}
                 disabled={canOnlyView}
                 name="dateOfBirth"
+                required
                 onChange={handleInputChange}
               />
             </Col>
@@ -209,6 +213,7 @@ const StudentModal = (props) => {
                     value={familyData[i]?.firstName}
                     disabled={canOnlyView}
                     name="firstName"
+                    required
                     placeholder="First Name"
                     onChange={(e) => onChangeFamilyHandler(e, i)}
                   />
@@ -225,6 +230,7 @@ const StudentModal = (props) => {
                     value={familyData[i]?.lastName}
                     disabled={canOnlyView}
                     name="lastName"
+                    required
                     placeholder="Last Name"
                     onChange={(e) => onChangeFamilyHandler(e, i)}
                   />
@@ -240,6 +246,7 @@ const StudentModal = (props) => {
                     name="nationality"
                     value={familyData[i]?.nationality}
                     disabled={canOnlyView}
+                    required
                     onChange={(e) => onChangeFamilyHandler(e, i)}
                     aria-label="Select Your Nationality"
                   >
@@ -267,6 +274,7 @@ const StudentModal = (props) => {
                     onChange={(e) => onChangeFamilyHandler(e, i)}
                     disabled={canOnlyView}
                     aria-label="Relationship"
+                    required
                   >
                     <option>Select Your Relationship</option>
                     {familyData[i]?.relationship && (
