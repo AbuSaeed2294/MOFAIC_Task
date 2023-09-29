@@ -1,0 +1,20 @@
+.container {
+  display: flex;
+  justify-content: space-around;
+  padding: 1rem 0;
+  background-color: rgba(182, 138, 53, 0.85);
+}
+
+.container a {
+  text-decoration: none;
+}
+
+.logo {
+  color: black;
+  font-weight: bold;
+}
+
+.dropdownButton select {
+  color: white;
+  border-color: white;
+}
