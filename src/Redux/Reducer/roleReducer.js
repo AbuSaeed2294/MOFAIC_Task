@@ -1,15 +1,17 @@
+import { SET_ADMIN_ROLE, SET_REGISTRAR_ROLE } from "../Action/actionTypes";
+
 const initialState = {
   role: "Admin",
 };
 
 const roleReducer = (state = initialState, action) => {
   switch (action.type) {
-    case "SET_ADMIN_ROLE":
+    case SET_ADMIN_ROLE:
       return {
         ...state,
         role: "Admin",
       };
-    case "SET_REGISTRAR_ROLE":
+    case SET_REGISTRAR_ROLE:
       return {
         ...state,
         role: "Registrar",
