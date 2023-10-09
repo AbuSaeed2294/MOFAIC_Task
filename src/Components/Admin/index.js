@@ -1,27 +1,42 @@
-import React from "react";
+import React, { useEffect } from "react";
 import Button from "react-bootstrap/Button";
 import StudentModal from "../Common/StudentModal";
 import Table from "react-bootstrap/Table";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
+import {
+  fetchStudents,
+  getAllNationality,
+  fetchStudentNationality,
+} from "../../Redux/Action/studentAction";
 
 const Admin = () => {
   const [showModal, setShowModal] = React.useState(false);
-  const [singleStudentData, setSingleStudentData] = React.useState({});
+  const [SelectedStudentDetails, setSelectedStudentDetails] = React.useState(
+    {}
+  );
 
-  const users = useSelector((state) => state.student.users);
-  const role = useSelector((state) => state.role.role);
+  const dispatch = useDispatch();
+  const studentsData = useSelector((state) => state.student.students);
+  const nationalityData = useSelector((state) => state.student.nationalityData);
 
-  const isAdminLogin = role === "Admin";
+  useEffect(() => {
+    dispatch(fetchStudents());
+    dispatch(getAllNationality());
+  }, [fetchStudents, getAllNationality, showModal]);
 
-  console.log({ isAdminLogin });
+  useEffect(() => {
+    studentsData.forEach((student) => {
+      dispatch(fetchStudentNationality(student.ID));
+    });
+  }, [dispatch, studentsData, showModal]);
 
   const handleModal = () => {
-    setSingleStudentData("");
+    setSelectedStudentDetails("");
     setShowModal(true);
   };
 
   const clickStudentDataHandler = (studentDetails) => {
-    setSingleStudentData(studentDetails);
+    setSelectedStudentDetails(studentDetails);
     setShowModal(true);
   };
 
@@ -31,13 +46,13 @@ const Admin = () => {
         Add Student
       </Button>
       <StudentModal
-        singleStudentData={singleStudentData}
-        setSingleStudentData={setSingleStudentData}
-        show={showModal}
+        SelectedStudentDetails={SelectedStudentDetails}
+        setSelectedStudentDetails={setSelectedStudentDetails}
+        showModal={showModal}
         onHide={() => setShowModal(false)}
       />
 
-      {!!users?.length && (
+      {!!studentsData?.length && (
         <Table
           responsive="sm"
           className="table-responsive table-hover table-bordered mb-0"
@@ -51,7 +66,7 @@ const Admin = () => {
             </tr>
           </thead>
           <tbody>
-            {users?.map((student, index) => {
+            {studentsData?.map((student, index) => {
               return (
                 <tr
                   key={index}
@@ -59,7 +74,7 @@ const Admin = () => {
                 >
                   <td>{student?.firstName}</td>
                   <td>{student?.lastName}</td>
-                  <td>{student?.nationality}</td>
+                  <td>{nationalityData[student.ID]?.nationality?.Title}</td>
                   <td>{student?.dateOfBirth}</td>
                 </tr>
               );

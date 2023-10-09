@@ -6,13 +6,23 @@ import Form from "react-bootstrap/Form";
 import Row from "react-bootstrap/Row";
 import { useSelector, useDispatch } from "react-redux";
 import {
-  updateBasicInfo,
-  deleteFamilyMember,
-  updateFamilyMember,
-  deleteUser,
+  postStudent,
+  fetchStudentFamilyData,
+  postStudentFamilyData,
+  updateStudentDetails,
+  updateStudentNationalityData,
+  updateStudentFamilyData,
+  deleteStudentFamilyData,
 } from "../../../Redux/Action/studentAction";
 
-const StudentModal = (props) => {
+const StudentModal = ({
+  SelectedStudentDetails,
+  isRegistrarWantToEdit,
+  onHide,
+  showModal,
+  approvedStudent,
+  setApprovedStudent,
+}) => {
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -21,26 +31,50 @@ const StudentModal = (props) => {
   });
 
   const [familyData, setFamilyData] = useState([]);
+  const [storedFamilyData, setStoredFamilyData] = useState([]);
 
   const dispatch = useDispatch();
-  const state = useSelector((state) => state);
-  const role = useSelector((state) => state.role.role);
+  const userRole = useSelector((state) => state.role.role);
+  const allNationality = useSelector((state) => state.student.allNationality);
+  const studentNationality = useSelector(
+    (state) => state.student.nationalityData[SelectedStudentDetails?.ID]
+  );
+  const studentFamilyMembers = useSelector(
+    (state) => state.student.familyData[SelectedStudentDetails?.ID]
+  );
 
   const adminRole =
-    role === "Admin" &&
-    props?.singleStudentData &&
-    !props.isRegistrarWantToEdit;
-  const hideButtons = props?.singleStudentData && !props?.isRegistrarWantToEdit;
+    userRole === "Admin" && SelectedStudentDetails && !isRegistrarWantToEdit;
+  const hideButtons = SelectedStudentDetails && !isRegistrarWantToEdit;
   const canOnlyView = adminRole || hideButtons;
 
   useEffect(() => {
-    if (props?.singleStudentData) {
-      setFamilyData(props?.singleStudentData?.familyInfo);
+    if (SelectedStudentDetails?.ID) {
+      dispatch(fetchStudentFamilyData(SelectedStudentDetails?.ID));
+    }
+
+    if (!studentFamilyMembers) {
+      // setFamilyData(studentFamilyMembers);
     } else {
       setFamilyData([]);
-      setFormData([]);
     }
-  }, [props.singleStudentData]);
+  }, [SelectedStudentDetails?.ID]);
+
+  useEffect(() => {
+    if (studentFamilyMembers?.length) {
+      setFamilyData(studentFamilyMembers);
+    } else {
+      setFamilyData([]);
+    }
+  }, [studentFamilyMembers]);
+
+  useEffect(() => {
+    isRegistrarWantToEdit
+      ? setFormData(SelectedStudentDetails)
+      : setFormData({});
+
+    setStoredFamilyData(familyData);
+  }, [isRegistrarWantToEdit, onHide]);
 
   const onClickAddFamilyMemberButton = () => {
     setFamilyData([
@@ -49,11 +83,13 @@ const StudentModal = (props) => {
     ]);
   };
 
-  const handleDeleteFamilyMemberButton = (i) => {
+  const handleDeleteFamilyMemberButton = (i, familyDataIndex) => {
     const removeFamilyRecord = [...familyData];
     removeFamilyRecord.splice(i, 1);
     setFamilyData(removeFamilyRecord);
-    dispatch(deleteFamilyMember(props?.singleStudentData?.id, i));
+    dispatch(
+      deleteStudentFamilyData(SelectedStudentDetails?.ID, familyDataIndex)
+    );
   };
 
   const onChangeFamilyHandler = (e, i) => {
@@ -77,30 +113,54 @@ const StudentModal = (props) => {
 
     e.preventDefault();
     const user = { id, ...formData, familyInfo: familyData };
-    dispatch(updateBasicInfo(user));
+    dispatch(postStudent(user, familyData));
     setFamilyData([]);
-    props.onHide();
+    onHide();
   };
 
   const handleUpdateUserButton = () => {
+    dispatch(updateStudentDetails(formData?.ID, formData));
+    dispatch(updateStudentNationalityData(formData?.ID, formData?.nationality));
     dispatch(
-      updateFamilyMember(props?.singleStudentData?.id, {
-        ...props.singleStudentData,
-        familyInfo: familyData,
-      })
+      updateStudentFamilyData(
+        familyData?.[0]?.ID || SelectedStudentDetails?.ID,
+        familyData
+      )
     );
-    props.onHide();
+
+    const differences = familyData?.filter((item1) => {
+      return !storedFamilyData?.some((item2) => {
+        return JSON.stringify(item1) === JSON.stringify(item2);
+      });
+    });
+    dispatch(postStudentFamilyData(SelectedStudentDetails?.ID, differences));
+
+    onHide();
   };
 
   const handleApproveButton = () => {
     // We don't have any api, that's why i am deleting the record on approve button
-    dispatch(deleteUser(props?.singleStudentData?.id));
-    props.onHide();
+    // TODO delete is not working need to check or remove the delete dispatch
+    // dispatch(deleteUser(SelectedStudentDetails?.ID));
+    // const differences = familyData?.filter((item1) => {
+    //   // Check if item1 is not found in obj2
+    //   return !storedFamilyData?.some((item2) => {
+    //     return JSON.stringify(item1) === JSON.stringify(item2);
+    //   });
+    // });
+    // console.log("differences", differences);
+    // console.log("familyData +++ :", familyData);
+    // dispatch(postStudentFamilyData(SelectedStudentDetails?.ID, differences));
+
+    setApprovedStudent([...approvedStudent, SelectedStudentDetails]);
+    onHide();
   };
 
   return (
     <Modal
-      {...props}
+      // {...props}
+      show={showModal}
+      onHide={onHide}
       size="lg"
       aria-labelledby="contained-modal-title-vcenter"
       centered
@@ -119,7 +179,7 @@ const StudentModal = (props) => {
             <Col sm="8">
               <Form.Control
                 type="text"
-                value={props?.singleStudentData?.firstName}
+                value={formData?.firstName || SelectedStudentDetails?.firstName}
                 disabled={canOnlyView}
                 name="firstName"
                 placeholder="First Name"
@@ -128,7 +188,6 @@ const StudentModal = (props) => {
               />
             </Col>
           </Form.Group>
-
           <Form.Group as={Row} className="mb-3" controlId="lastName">
             <Form.Label column sm="2">
               Last Name
@@ -136,7 +195,7 @@ const StudentModal = (props) => {
             <Col sm="8">
               <Form.Control
                 type="text"
-                value={props?.singleStudentData?.lastName}
+                value={formData?.lastName || SelectedStudentDetails?.lastName}
                 disabled={canOnlyView}
                 name="lastName"
                 placeholder="Last Name"
@@ -145,7 +204,6 @@ const StudentModal = (props) => {
               />
             </Col>
           </Form.Group>
-
           <Form.Group as={Row} className="mb-3" controlId="Nationality">
             <Form.Label column sm="2">
               Nationality
@@ -159,17 +217,17 @@ const StudentModal = (props) => {
                 aria-label="Select Your Nationality"
               >
                 <option>Select Your Nationality</option>
-                {props?.singleStudentData?.nationality && (
+                {studentNationality?.nationality && (
                   <option
-                    value={props?.singleStudentData?.nationality}
+                    value={studentNationality?.nationality?.Title}
                     selected
                   >
-                    {props?.singleStudentData?.nationality}
+                    {studentNationality?.nationality?.Title}
                   </option>
                 )}
-                <option value="UAE">UAE</option>
-                <option value="USA">USA</option>
-                <option value="KSA">KSA</option>
+                {allNationality?.map((country) => {
+                  return <option value={country.ID}>{country?.Title}</option>;
+                })}
               </Form.Select>
             </Col>
           </Form.Group>
@@ -181,7 +239,7 @@ const StudentModal = (props) => {
               <input
                 className="form-control"
                 type="date"
-                value={props?.singleStudentData?.dateOfBirth}
+                value={SelectedStudentDetails?.dateOfBirth}
                 disabled={canOnlyView}
                 name="dateOfBirth"
                 required
@@ -197,7 +255,9 @@ const StudentModal = (props) => {
                 <div className="text-end">
                   <Button
                     variant="danger"
-                    onClick={() => handleDeleteFamilyMemberButton(i)}
+                    onClick={() =>
+                      handleDeleteFamilyMemberButton(i, familyData[i]?.ID)
+                    }
                   >
                     Delete
                   </Button>
@@ -244,21 +304,26 @@ const StudentModal = (props) => {
                 <Col sm="8">
                   <Form.Select
                     name="nationality"
-                    value={familyData[i]?.nationality}
+                    value={familyData[i]?.nationality?.Title}
                     disabled={canOnlyView}
                     required
                     onChange={(e) => onChangeFamilyHandler(e, i)}
                     aria-label="Select Your Nationality"
                   >
                     <option>Select Your Nationality</option>
-                    {familyData[i]?.nationality && (
-                      <option value={familyData[i]?.nationality} selected>
-                        {familyData[i]?.nationality}
+                    {familyData[i]?.nationality?.Title && (
+                      <option
+                        value={familyData[i]?.nationality?.Title}
+                        selected
+                      >
+                        {familyData[i]?.nationality?.Title}
                       </option>
                     )}
-                    <option value="UAE">UAE</option>
-                    <option value="USA">USA</option>
-                    <option value="KSA">KSA</option>
+                    {allNationality?.map((country) => {
+                      return (
+                        <option value={country.ID}>{country?.Title}</option>
+                      );
+                    })}
                   </Form.Select>
                 </Col>
               </Form.Group>
@@ -299,14 +364,14 @@ const StudentModal = (props) => {
               >
                 Add Family Member
               </Button>
-              {props.isRegistrarWantToEdit && (
+              {isRegistrarWantToEdit && (
                 <>
                   <Button
                     onClick={handleUpdateUserButton}
                     variant="dark"
                     className="mx-2"
                   >
-                    Update User
+                    Update Student
                   </Button>
 
                   <Button
@@ -318,15 +383,13 @@ const StudentModal = (props) => {
                   </Button>
                 </>
               )}
-              {!props.isRegistrarWantToEdit && (
-                <Button type="submit">Submit</Button>
-              )}
+              {!isRegistrarWantToEdit && <Button type="submit">Submit</Button>}
             </Col>
           )}
         </Form>
       </Modal.Body>
       <Modal.Footer>
-        <Button onClick={props.onHide}>Close</Button>
+        <Button onClick={onHide}>Close</Button>
       </Modal.Footer>
     </Modal>
   );

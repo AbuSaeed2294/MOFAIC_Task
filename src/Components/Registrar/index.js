@@ -1,29 +1,55 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Button from "react-bootstrap/Button";
 import StudentModal from "../Common/StudentModal";
 import Table from "react-bootstrap/Table";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
+import {
+  fetchStudents,
+  getAllNationality,
+  fetchStudentNationality,
+} from "../../Redux/Action/studentAction";
 
 const Registrar = () => {
   const [showModal, setShowModal] = React.useState(false);
-  const [singleStudentData, setSingleStudentData] = React.useState({});
+  const [SelectedStudentDetails, setSelectedStudentDetails] = React.useState(
+    {}
+  );
   const [isRegistrarWantToEdit, setIsRegistrarWantToEdit] = useState(false);
+  const [approvedStudent, setApprovedStudent] = useState([]);
 
-  const users = useSelector((state) => state.student.users);
+  const dispatch = useDispatch();
+  const studentsData = useSelector((state) => state.student.students);
+  const nationalityData = useSelector((state) => state.student.nationalityData);
+
+  useEffect(() => {
+    dispatch(fetchStudents());
+    dispatch(getAllNationality());
+  }, [fetchStudents, getAllNationality, showModal]);
+
+  useEffect(() => {
+    studentsData.forEach((student) => {
+      dispatch(fetchStudentNationality(student.ID));
+    });
+  }, [dispatch, studentsData]);
 
   const handleModal = () => {
-    setSingleStudentData("");
+    setSelectedStudentDetails("");
     setShowModal(true);
   };
 
   const clickStudentDataHandler = (studentDetails) => {
-    setSingleStudentData(studentDetails);
+    setSelectedStudentDetails(studentDetails);
     setShowModal(true);
   };
 
   const handleEditStudentDetails = () => {
-    setSingleStudentData([]);
+    setSelectedStudentDetails([]);
     setIsRegistrarWantToEdit(true);
+  };
+
+  const clickApprovedStudentListHandler = (studentDetails) => {
+    setSelectedStudentDetails(studentDetails);
+    setShowModal(true);
   };
 
   const hideModal = () => {
@@ -37,45 +63,85 @@ const Registrar = () => {
         Add Student
       </Button>
       <StudentModal
-        singleStudentData={singleStudentData}
-        setSingleStudentData={setSingleStudentData}
-        show={showModal}
+        SelectedStudentDetails={SelectedStudentDetails}
+        setSelectedStudentDetails={setSelectedStudentDetails}
+        showModal={showModal}
         isRegistrarWantToEdit={isRegistrarWantToEdit}
         onHide={hideModal}
+        approvedStudent={approvedStudent}
+        setApprovedStudent={setApprovedStudent}
       />
 
-      {!!users?.length && (
-        <Table
-          responsive="sm"
-          className="table-responsive table-hover table-bordered mb-0"
-        >
-          <thead>
-            <tr>
-              <th>First Name</th>
-              <th>Last Name</th>
-              <th>Nationality</th>
-              <th>Date of Birth</th>
-              <th>Edit</th>
-            </tr>
-          </thead>
-          <tbody>
-            {users?.map((student, i) => {
-              return (
-                <tr onClick={() => clickStudentDataHandler(student)}>
-                  <td>{student?.firstName}</td>
-                  <td>{student?.lastName}</td>
-                  <td>{student?.nationality}</td>
-                  <td>{student?.dateOfBirth}</td>
-                  <td>
-                    <Button variant="danger" onClick={handleEditStudentDetails}>
-                      Edit
-                    </Button>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </Table>
+      {!!studentsData?.length && (
+        <>
+          <h2>Pending Students</h2>
+          <Table
+            responsive="sm"
+            className="table-responsive table-hover table-bordered mb-0"
+          >
+            <thead>
+              <tr>
+                <th>First Name</th>
+                <th>Last Name</th>
+                <th>Nationality</th>
+                <th>Date of Birth</th>
+                <th>Edit</th>
+              </tr>
+            </thead>
+            <tbody>
+              {studentsData?.map((student, i) => {
+                return (
+                  <tr onClick={() => clickStudentDataHandler(student)}>
+                    <td>{student?.firstName}</td>
+                    <td>{student?.lastName}</td>
+                    <td>{nationalityData[student.ID]?.nationality?.Title}</td>
+                    <td>{student?.dateOfBirth}</td>
+                    <td>
+                      <Button
+                        variant="danger"
+                        onClick={handleEditStudentDetails}
+                      >
+                        Edit
+                      </Button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </Table>
+        </>
+      )}
+
+      {/* approved student list */}
+      {!!approvedStudent?.length && (
+        <>
+          <h2 className="mt-5">Approved Students</h2>
+          <Table
+            responsive="sm"
+            className="table-responsive table-hover table-bordered mb-0"
+          >
+            <thead>
+              <tr>
+                <th>First Name</th>
+                <th>Last Name</th>
+                <th>Nationality</th>
+                <th>Date of Birth</th>
+              </tr>
+            </thead>
+            <tbody>
+              {approvedStudent?.map((student, i) => {
+                return (
+                  <tr onClick={() => clickApprovedStudentListHandler(student)}>
+                    <td>{student?.firstName}</td>
+                    <td>{student?.lastName}</td>
+                    <td>{nationalityData[student.ID]?.nationality?.Title}</td>
+                    <td>{student?.dateOfBirth}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </Table>
+        </>
       )}
     </div>
   );
